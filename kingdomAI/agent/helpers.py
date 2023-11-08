@@ -28,7 +28,7 @@ def is_point_an_eye(board, point, color):
             is_bottom_edge = is_bottom_edge or neighbor.row > board.num_rows
             is_left_edge = is_left_edge or neighbor.col < 1
             is_right_edge = is_right_edge or neighbor.col > board.num_cols
-            if board.get(neighbor) is not None and ( board.get(neighbor) != color and color != Player.neutral ):
+            if board.get(neighbor) is not None and ( board.get(neighbor) != color and board.get(neighbor) != Player.neutral ):
                 is_exist_opposite_color = True
             if neighbor not in visited and board.get(neighbor) is None and board.is_on_grid(neighbor) and is_exist_opposite_color == False:
                 visited.add(neighbor)
