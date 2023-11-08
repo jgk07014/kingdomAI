@@ -3,6 +3,7 @@ import enum
 from collections import namedtuple
 
 class Player(enum.Enum):
+    empty = 0  # 공백
     black = 1  # 선수
     white = 2  # 후수
     black_eye = 3  # 선수의 집

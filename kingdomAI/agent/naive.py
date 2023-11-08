@@ -1,11 +1,13 @@
 import random
 from kingdomAI.agent.base import Agent
 from kingdomAI.agent.helpers import is_point_an_eye
-from kingdomAI.kingdom_board import Move
+# from kingdomAI.kingdom_board import Move # (circular import bug code)
 from kingdomAI.kingdom_types import Point
 
 class RandomBot(Agent):
     def select_move(self, game_state):
+        # 순환 참조 버그(circular import bug)를 방지하기 위해 Lazy Import 기법 사용
+        from kingdomAI.kingdom_board import Move
         # 착수 가능한 임의의 유효한 수를 선택, 없을 경우 패스
         candidates = []
         for r in range(1, game_state.board.num_rows + 1):

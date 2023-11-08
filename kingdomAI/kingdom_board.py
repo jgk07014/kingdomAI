@@ -114,6 +114,49 @@ class Board():
         # 착수해서 상대방 돌을 따내는 순간 즉시 승리
         return is_win_game
 
+    def custom_place_stone(self, player, point):
+        assert self.get_point_an_eye(point) is None
+        assert self.is_on_grid(point)
+        assert self._grid.get(point) is None
+        is_win_game = False
+        adjacent_same_color = []
+        adjacent_opposite_color = []
+        liberties = []
+        for neighbor in point.neighbors():
+            if not self.is_on_grid(neighbor):
+                continue
+            neighbor_string = self._grid.get(neighbor)
+            if neighbor_string is None:
+                liberties.append(neighbor)
+            elif neighbor_string.color == player:
+                if neighbor_string not in adjacent_same_color:
+                    adjacent_same_color.append(neighbor_string)
+            elif neighbor_string.color == player.other:
+                if neighbor_string not in adjacent_opposite_color:
+                    adjacent_opposite_color.append(neighbor_string)
+        new_string = KingdomString(player, [point], liberties)
+        # 같은 색의 근접한 이음을 합친다.
+        for same_color_string in adjacent_same_color:
+            new_string = new_string.merged_with(same_color_string)
+        # 새롭게 돌을 착수한다.
+        for new_string_point in new_string.stones:
+            self._grid[new_string_point] = new_string
+        # 다른 색의 근접한 이음의 활로를 줄인다.
+        for other_color_string in adjacent_opposite_color:
+            other_color_string.remove_liberty(point)
+        # 다른 색 이음의 활로가 0이 되면 그 돌을 제거한다.
+        for other_color_string in adjacent_opposite_color:
+            if other_color_string.num_liberties == 0:
+                is_win_game = True
+                self._remove_string(other_color_string)
+        # custom 에서는 집 업데이트를 하지 않는 옵션이 추가됨.(패킷받을 때 강제로 착수하는 알고리즘의 필요에 의해 만들어진 옵션)
+        # # 이웃한 집이 아닌 빈 좌표를 bfs 시작지점으로 설정하여 이번 착수로 인해 신규로 생성된 집을 추가한다.
+        # for neighbor in point.neighbors():
+        #     if self._grid.get(neighbor) is None and self._eye.get(neighbor) is None and self.is_on_grid(neighbor):
+        #         self.update_eye(player, neighbor)
+        # 착수해서 상대방 돌을 따내는 순간 즉시 승리
+        return is_win_game
+
     # 주어진 좌표로 부터 bfs 탐색을 할 때 집이될 수 있으면 집 업데이트
     def update_eye(self, player, point):
         assert self.get_point_an_eye(point) is None
@@ -151,7 +194,7 @@ class Board():
         return 1 <= point.row <= self.num_rows and \
             1 <= point.col <= self.num_cols
 
-    # 해당 좌표값(point)이 집(eye)으로 완성된 영역인지 판별하는 메서드
+    # 해당 좌표값(point)이 집(eye)이면 집의 색깔, 아니면 None 을 반환하는 메서드
     def get_point_an_eye(self, point):
         eye_color = self._eye.get(point)
         if eye_color is None:
@@ -189,6 +232,17 @@ class GameState():
         if move.is_play:
             next_board = copy.deepcopy(self.board)
             is_instant_win = next_board.place_stone(self.next_player, move.point)
+        else:
+            next_board = self.board
+        game = GameState(next_board, self.next_player.other, self, move)
+        game.is_instant_win = is_instant_win
+        return game
+
+    def custom_apply_move(self, move):
+        is_instant_win = False
+        if move.is_play:
+            next_board = copy.deepcopy(self.board)
+            is_instant_win = next_board.custom_place_stone(self.next_player, move.point)
         else:
             next_board = self.board
         game = GameState(next_board, self.next_player.other, self, move)
