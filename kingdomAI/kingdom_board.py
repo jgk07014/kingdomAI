@@ -262,6 +262,38 @@ class GameState():
             return False
         return self.last_move.is_pass and second_last_move.is_pass
 
+    # 대국 종료시 승자 판단
+    def winner(self):
+        result = None
+
+        if(self.is_instant_win):
+            result = self.next_player.other
+        else:
+            black_eye_count = self.get_player_eye_count(Player.black)
+            white_eye_count = self.get_player_eye_count(Player.white)
+            is_black_win = black_eye_count > white_eye_count
+            is_white_win = black_eye_count < white_eye_count
+            if is_black_win:
+                result = Player.black
+            elif is_white_win:
+                result = Player.white
+            else:
+                result = None
+
+        # 무승부 혹은 승패가 결정되지 않은 상태일 경우 None 상태
+        return result
+
+    # 인자로 주어진 플레이어의 현재 점수 계산
+    def get_player_eye_count(self, player):
+        count = 0
+        for row in range(1, self.board.num_rows + 1):
+            for col in range(1, self.board.num_cols + 1):
+                point = Point(row, col)
+                eye = self.board.get_point_an_eye(point)
+                if eye == player:
+                    count = count + 1
+        return count
+
     # 가능한 모든 행동 리스트
     def legal_moves(self):
         moves = []
@@ -273,6 +305,23 @@ class GameState():
         # These two moves are always legal
         moves.append(Move.pass_turn())
         moves.append(Move.resign())
+        return moves
+
+    # 실력 향상을 위해서 직관적 명제 추가
+    # 착수할 지점이 있으면 패스나 기권을 하지 않을 예정, 착수할 지점이 없으면 패스, 기권은 존재하지 않음.
+    def legal_moves2(self):
+        exist_move_point = None
+        moves = []
+        for row in range(1, self.board.num_rows + 1):
+            for col in range(1, self.board.num_cols + 1):
+                move = Move.play(Point(row, col))
+                if self.is_valid_move(move):
+                    exist_move_point = True
+                    moves.append(move)
+        # These two moves are always legal but except move_pass
+        if exist_move_point:
+            moves.append(Move.pass_turn())
+            # moves.append(Move.resign())
         return moves
 
     # 자충수 여부 확인

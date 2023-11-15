@@ -29,7 +29,10 @@ def main():
     game = kingdom_board.GameState.new_game(board_size, neutral_row, neutral_col)
     bots = {
         kingdom_types.Player.black: agent.naive.RandomBot(),
-        kingdom_types.Player.white: agent.naive.RandomBot()
+        # kingdom_types.Player.white: agent.naive.RandomBot()
+        # kingdom_types.Player.black: agent.mcts.MCTSAgent(3, 1.5)
+        # kingdom_types.Player.white: agent.minimax.MinimaxAgent(3)
+        kingdom_types.Player.white: agent.naive.HeuristicsBot()
     }
     print(chr(27) + "[2J")
     print_board(game)
