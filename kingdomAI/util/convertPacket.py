@@ -1,7 +1,6 @@
 from kingdomAI import kingdom_types, kingdom_board
 from kingdomAI.kingdom_board import Move, KingdomString
 from kingdomAI.kingdom_types import Point
-from kingdomAI.utils import print_board
 
 
 def convertKingdomGameToJsonData(jsonData):
@@ -56,6 +55,5 @@ def convertKingdomGameToJsonData(jsonData):
                 if not alreadyUpdated:
                     game.board.update_eye(game.next_player, point)
     game.next_player = Player(next_player_color)
-    print_board(game)
 
     return game
