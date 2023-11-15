@@ -3,6 +3,7 @@ from kingdomAI.agent.base import Agent
 from kingdomAI.agent.helpers import is_point_an_eye
 # from kingdomAI.kingdom_board import Move # (circular import bug code)
 from kingdomAI.kingdom_types import Point
+from kingdomAI.util.number import gen_weight_rand
 
 class RandomBot(Agent):
     def select_move(self, game_state):
@@ -25,14 +26,14 @@ class RandomBot(Agent):
 
 # 완전한 무작위 봇이 아닌 직관적 명제를 추가하여 수를 선택하는 봇
 # 직관적 명제 1 : 초반 10 수 미만은 꼭짓점에 두지 않음(적용완료)
-# 직관적 명제 2 : 두었을 때 자신의 활로가 늘어나는 수를 (3배 * 늘어난 활로의 수)만큼의 가중치를 추가로 부여함(미적용)
+# 직관적 명제 2 : 두었을 때 자신의 활로가 늘어나는 수를 (3배 * 늘어난 활로의 수)만큼의 가중치를 추가로 곱함(적용완료)
 # 직관적 명제 3 : 기권은 절대 안함(적용완료)
 # 직관적 명제 4 : 착수할 지점이 없을 경우에만 패스를 함(적용완료)
 # 직관적 명제 5 : 초반 5 수 미만은 모서리에 두지 않음(적용완료)
 # 직관적 명제 6 : 두었을 때 즉시 승리하는 수는 바로 선택함(적용완료)
-# 직관적 명제 7 : 두었을 때 활로가 1 이 되는 수는 선택하지 않음(적용완료)
-# 직관적 명제 8 : 두었을 때 집이 증가하는 수는 (5배 * 늘어난 집 수)만큼의 가중치를 추가로 부여함(미적용)
-# 직관적 명제 9 : 두었을 때 상대방의 활로가 줄어드는 수를 (2배 * 줄어든 활로의 수)만큼의 가중치를 추가로 부여함(미적용)
+# 직관적 명제 7 : 두었을 때 자신의 활로가 1 이 되는 수는 선택하지 않음(적용완료)
+# 직관적 명제 8 : 두었을 때 자신의 집이 증가하는 수는 (5배 * (늘어난 집 수)^2)만큼의 가중치를 추가로 곱함(적용완료)
+# 직관적 명제 9 : 두었을 때 상대방의 활로가 줄어드는 수를 (2배 * 줄어든 활로의 수)만큼의 가중치를 추가로 곱함(적용완료)
 class HeuristicsBot(Agent):
     initial_su1 = 10  # 초반 10 수
     initial_su2 = 5  # 초반 5 수
@@ -89,12 +90,35 @@ class HeuristicsBot(Agent):
                     # 직관적 명제 6 : 두었을 때 즉시 승리하는 수는 바로 선택함
                     if next_state.is_over():
                        return Move.play(candidate)
+                    # inital value
+                    curr_player = game_state.next_player # 나
+                    other_player = curr_player.other # 상대방
+                    # 직관적 명제 2 : 두었을 때 자신의 활로가 늘어나는 수를 (3배 * 늘어난 활로의 수)만큼의 가중치를 추가로 곱함(적용완료)
+                    before_my_total_liberties = game_state.get_player_all_liberties_count(curr_player)
+                    after_my_total_liberties = game_state.get_player_all_liberties_count(curr_player)
+                    delta_my_total_liberties = after_my_total_liberties - before_my_total_liberties
+                    if delta_my_total_liberties > 0:
+                        weight *= self.weight_our_liberties_multiple * delta_my_total_liberties
+                    # 직관적 명제 9 : 두었을 때 상대방의 활로가 줄어드는 수를 (2배 * 줄어든 활로의 수)만큼의 가중치를 추가로 곱함
+                    before_other_total_liberties = game_state.get_player_all_liberties_count(other_player)
+                    after_other_total_liberties = next_state.get_player_all_liberties_count(other_player)
+                    delta_other_total_liberties = before_other_total_liberties - after_other_total_liberties
+                    if delta_other_total_liberties > 0:
+                        weight *= self.weight_oppo_liberties_multiple * delta_other_total_liberties
+                    # 직관적 명제 8 : 두었을 때 자신의 집이 증가하는 수는 (5배 * (늘어난 집 수)^2)만큼의 가중치를 추가로 부여함
+                    before_my_eye_count = game_state.get_player_eye_count(curr_player)
+                    after_my_eye_count = next_state.get_player_eye_count(curr_player)
+                    delta_my_eye_count = after_my_eye_count - before_my_eye_count
+                    if delta_my_eye_count > 0:
+                        weight *= self.weight_house_multiple * ( delta_my_eye_count * delta_my_eye_count )
                     # 일반적인 수는 가중치계산해서 선택할 후보 지점으로서 추가
                     candidates.append(candidate)
                     candidates_weight.append(weight)
 
-        # 직관적 명제 3 : 기권은 절대 안함
         # 직관적 명제 4 : 착수할 지점이 없을 경우에만 패스를 함
         if not candidates:
             return Move.pass_turn()
-        return Move.play(random.choice(candidates))
+            # 직관적 명제 3 : 기권은 절대 안함
+            #return Move.resign()
+        move_index = gen_weight_rand(candidates_weight)
+        return Move.play(candidates[move_index])

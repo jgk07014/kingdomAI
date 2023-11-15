@@ -27,7 +27,7 @@ def main():
     neutral_row = math.floor(board_size / 2) + 1
     neutral_col = math.floor(board_size / 2) + 1
     game = kingdom_board.GameState.new_game(board_size, neutral_row, neutral_col)
-    bots = agent.naive.RandomBot()
+    bots = agent.alphabeta.AlphaBetaAgent(1)
     print(chr(27) + "[2J")
     print_board(game)
     while not game.is_over():

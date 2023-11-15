@@ -290,9 +290,17 @@ class GameState():
             for col in range(1, self.board.num_cols + 1):
                 point = Point(row, col)
                 eye = self.board.get_point_an_eye(point)
-                if eye == player:
+                if eye == player.get_eye_color(player):
                     count = count + 1
         return count
+
+    # 인자로 주어진 플레이어의 현재 모든 활로의 수 계산
+    def get_player_all_liberties_count(self, player):
+        all_num_liberties = 0
+        for value in self.board._grid.values():
+            if value.color == player:
+                all_num_liberties += value.num_liberties
+        return all_num_liberties
 
     # 가능한 모든 행동 리스트
     def legal_moves(self):

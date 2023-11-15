@@ -28,11 +28,15 @@ def main():
     neutral_col = math.floor(board_size / 2) + 1
     game = kingdom_board.GameState.new_game(board_size, neutral_row, neutral_col)
     bots = {
-        kingdom_types.Player.black: agent.naive.RandomBot(),
+        # kingdom_types.Player.black: agent.naive.RandomBot(),
+        kingdom_types.Player.black: agent.naive.HeuristicsBot(),
+        # kingdom_types.Player.black: agent.minimax.MinimaxAgent(2),
+        # kingdom_types.Player.black: agent.mcts.MCTSAgent(3, 1.5),
+        # kingdom_types.Player.black: agent.alphabeta.AlphaBetaAgent(1),
         # kingdom_types.Player.white: agent.naive.RandomBot()
-        # kingdom_types.Player.black: agent.mcts.MCTSAgent(3, 1.5)
-        # kingdom_types.Player.white: agent.minimax.MinimaxAgent(3)
         kingdom_types.Player.white: agent.naive.HeuristicsBot()
+        # kingdom_types.Player.white: agent.minimax.MinimaxAgent(2)
+        # kingdom_types.Player.white: agent.mcts.MCTSAgent(1, 1.5)
     }
     print(chr(27) + "[2J")
     print_board(game)
